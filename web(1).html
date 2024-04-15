@@ -1,0 +1,270 @@
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>全国地震</title>
+    <script type="module" src="https://js.arcgis.com/calcite-components/2.5.1/calcite.esm.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.5.1/calcite.css"/>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.29/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      #timeSlider {
+        position: absolute;
+        left: 20%;
+        right: 20%;
+        bottom: 60px;
+        height: 100px;
+        
+      }
+
+      #titleDiv {
+        padding: 10px;
+        font-weight: 36;
+        text-align: center;
+        left: 0;            /* 设置左边距为0 */
+        bottom: 0;          /* 设置底边距为0 */
+      }
+      
+      /*地图库*/
+        #gallery-node {
+          float: left;
+          width: 25%;
+          height: 94%;
+          padding: 1em;
+          overflow: scroll;
+          max-height: 100%;
+          border-width: 2px;
+          border-color: #323232;
+          border-style: solid;
+        }
+        
+        .esri-scale-bar {  
+            position: absolute;  
+            bottom: 50px; 
+            right: 10px; 
+            z-index: 5;  
+        }
+        
+        #header {    
+            height: 50px;   
+            background-color: #1CC7AE;   
+            text-align: center;    
+            line-height: 50px;   
+        }
+        
+        #basemapGalleryDiv {    
+            height: 100px;   
+            background-color: #1C89C7;   
+            overflow: auto;
+            
+        }
+        
+
+    </style>
+    <script>
+    require([
+      "esri/Map",
+      "esri/views/MapView",
+      "esri/layers/FeatureLayer",
+      "esri/widgets/TimeSlider",
+      "esri/widgets/Expand",
+      "esri/widgets/Legend",
+      "esri/widgets/TimeZoneLabel",
+      "esri/PopupTemplate",
+      "esri/widgets/Search",
+      "esri/widgets/LayerList",
+      "esri/widgets/BasemapGallery",
+      "esri/widgets/ScaleBar"
+      
+    ], (
+        Map,
+        MapView,
+        FeatureLayer,
+        TimeSlider,
+        Expand,
+        Legend,
+        TimeZoneLabel,
+        PopupTemplate,
+        Search,
+        LayerList,
+        BasemapGallery,
+        ScaleBar
+
+      ) => {
+      
+      const template2 = new PopupTemplate({
+                title: "全国地震点", // 更改为你的字段名
+                content: [
+        {
+            type: "fields",
+            fieldInfos: [
+                {
+                    fieldName: "省份", // 更改为你的字段名
+                    label: "NAME", // 更改为你想显示的标签
+                    
+                },
+                {
+                    fieldName: "time", // 更改为你的字段名
+                    label: "时间", // 更改为你想显示的标签
+                  
+                },
+                {
+                    fieldName: "longitude", // 更改为你的字段名
+                    label: "经度", // 更改为你想显示的标签
+                  
+                },
+                {
+                    fieldName: "	latitude", // 更改为你的字段名
+                    label: "纬度", // 更改为你想显示的标签
+                  
+                }
+                
+                // 你可以添加更多的字段
+            ]
+        }
+    ]
+});
+    
+      
+      const layer = new FeatureLayer({
+        url:
+          "https://www.geosceneonline.cn/server/rest/services/Hosted/ddddzzzz/FeatureServer/0",
+          popupTemplate: template2
+      });
+
+      const map = new Map({
+        basemap: "streets",
+        layers: [layer]
+      });
+
+      const view = new MapView({
+        map: map,
+        container: "viewDiv",
+        zoom: 2,
+        center: [117,28]
+      });
+      
+      
+
+      
+      
+      const scaleBar = new ScaleBar({
+             view: view,
+             style:"ruler",
+          unit: 'metric'
+             });
+             view.ui.add(scaleBar, {
+             position: "bottom-right"
+             });
+      
+      var search = new Search({  
+             view: view  
+             });  
+             view.ui.add(search, "top-left");
+             
+             
+             
+      const timezonePicker = document.getElementById("timezone-picker");
+      view.ui.add("timezone-picker", "top-left");
+
+      // Change the map view's time zone when user picks a time zone from the component
+      timezonePicker.addEventListener("calciteInputTimeZoneChange", () => {
+        view.timeZone = timezonePicker.value;
+      });
+
+
+       // TimeZoneLabel lets users know what the time zone of the view is.
+       // This provides an important context to users how the date and times are displayed
+      view.ui.add(new TimeZoneLabel({ view: view }), "top-left");
+             
+      var layerList = new LayerList({  
+             view: view  
+             });  
+             var layerListExpand = new Expand({
+             view: view,
+             content: layerList,
+             expandIconClass: "esri-icon-layers", // 更改为图层图标
+             group: "top-right"
+             });
+             view.ui.add(layerListExpand, "top-left");
+         
+             
+       var legend = new Legend({  
+             view: view  
+             });  
+             var legendExpand = new Expand({
+             view: view,
+             content: legend,
+             expandIconClass: "esri-icon-legend", // 更改为地图图标
+             group: "top-left"
+             });
+             view.ui.add(legendExpand, "top-left");
+      
+
+      // time slider widget initialization
+      const timeSlider = new TimeSlider({
+        container: "timeSlider",
+        view: view,
+        timeVisible: true, // show the time stamps on the timeslider
+        loop: true
+      });
+
+      // add the UI for a title
+      view.ui.add("titleDiv", "top-right");
+      view.ui.move("zoom", "top-left");
+
+
+      view.whenLayerView(layer).then((lv) => {
+        // around up the full time extent to full hour
+        timeSlider.fullTimeExtent = layer.timeInfo.fullTimeExtent.expandTo("hours");
+        timeSlider.stops = {
+          interval: layer.timeInfo.interval
+        };
+      });
+
+
+
+      // calcite input time zone component allows users to pick from one of the IANA
+      // time zones without having to add the time zones manually to a drop down
+      
+
+      
+      var basemapGallery = new BasemapGallery({    
+                view: view,    
+                container: "basemapGalleryDiv",
+                visibleBasemaps: ["topo-vector", "satellite", "streets"]    
+            });    
+            basemapGallery.startup();
+            
+            
+      
+    
+      
+    });
+  </script>
+  </head>
+
+  <body>
+    <header id="header">2018-2023年全国地震分布情况</header>
+    <div id="viewDiv"></div>
+    <div id="timeSlider"></div>
+    <div id="titleDiv" class="esri-widget">
+      <div id="titleText">底图库 </div>
+      <div id="basemapGalleryDiv"></div>
+    </div>
+    <calcite-input-time-zone mode="name" id="timezone-picker"></calcite-input-time-zone>
+  </body>
+
+</html>
